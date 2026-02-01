@@ -70,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
         if(order.getTotalAmount() == null){
             order.setTotalAmount(totalAmount);
         }
+
         //set order status to placed
         order.setOrderStatus(OrderStatus.PLACED);
         orderRepository.save(order);
