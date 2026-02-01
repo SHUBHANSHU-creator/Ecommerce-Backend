@@ -64,10 +64,10 @@ public class OrderServiceImpl implements OrderService {
             if (orderItem.getQuantity() == null || orderItem.getQuantity() <= 0) {
                 throw new InvalidOrderException("Order item must contain at least one quantity");
             }
-            if (!inventoryService.checkAvailability(product.getProductId(), orderItem.getQuantity())) {
-                throw new InvalidOrderException("Insufficient stock for productId=" + product.getProductId());
+            if (!inventoryService.checkAvailability(product.getId(), orderItem.getQuantity())) {
+                throw new InvalidOrderException("Insufficient stock for productId=" + product.getId());
             }
-            inventoryService.reduceStock(product.getProductId(), orderItem.getQuantity());
+            inventoryService.reduceStock(product.getId(), orderItem.getQuantity());
             orderItem.setOrder(order);
             totalAmount += orderItem.getPriceAtPurchase() * orderItem.getQuantity();
         }

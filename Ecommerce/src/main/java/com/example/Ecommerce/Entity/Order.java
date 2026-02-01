@@ -30,7 +30,7 @@ public class Order {
     //default will also be eager only here for many to one relationship since only one record needs to be fetched
     @ManyToOne(fetch = FetchType.EAGER)
     private User user;
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToOne
     private Payments payments;
 
 

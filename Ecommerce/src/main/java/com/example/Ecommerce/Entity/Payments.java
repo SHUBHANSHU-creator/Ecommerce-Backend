@@ -19,7 +19,7 @@ public class Payments {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Double totalAmount;
-    @ManyToOne
+    @OneToOne
     private Order order;
     private Double paymentAmount;
     @Enumerated(EnumType.STRING)
@@ -30,7 +30,7 @@ public class Payments {
     private LocalDateTime paymentDate;
 
     @PrePersist
-    protected void paymentDate(LocalDateTime paymentDate) {
-        this.paymentDate = paymentDate;
+    protected void paymentDate() {
+        this.paymentDate = LocalDateTime.now();
     }
 }
