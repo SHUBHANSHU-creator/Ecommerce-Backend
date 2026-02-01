@@ -1,12 +1,13 @@
 package com.example.Ecommerce.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,5 +21,11 @@ public class User {
     @ToString.Exclude
     private String password;
     private String phoneNumber;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+    private List<Cart> carts = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+    private List<Order> orders = new ArrayList<>();
 
 }
