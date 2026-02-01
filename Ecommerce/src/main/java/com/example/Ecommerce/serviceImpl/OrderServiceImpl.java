@@ -2,8 +2,10 @@ package com.example.Ecommerce.serviceImpl;
 
 import com.example.Ecommerce.Entity.Order;
 import com.example.Ecommerce.Entity.OrderItem;
+import com.example.Ecommerce.Entity.Payments;
 import com.example.Ecommerce.Entity.Product;
 import com.example.Ecommerce.Enums.OrderStatus;
+import com.example.Ecommerce.Enums.PaymentMethod;
 import com.example.Ecommerce.Repository.OrderRepository;
 import com.example.Ecommerce.exception.InvalidOrderException;
 import com.example.Ecommerce.exception.OrderNotFoundException;
@@ -23,6 +25,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private InventoryService inventoryService;
+
+    @Autowired
+    private PaymentServiceFactory paymentServiceFactory;
 
     @Override
     public List<Order> getAllOrders() {
@@ -70,9 +75,12 @@ public class OrderServiceImpl implements OrderService {
         if(order.getTotalAmount() == null){
             order.setTotalAmount(totalAmount);
         }
-
         //set order status to placed
         order.setOrderStatus(OrderStatus.PLACED);
+        Payments payments = order.getPayments();
+        if(payments != null && payments.getPaymentMethod() != null && payments.getPaymentMethod() != PaymentMethod.COD) {
+            paymentServiceFactory.processPayment(payments.getPaymentMethod(),order);
+        }
         orderRepository.save(order);
         return"Order placed successfully";
     }

@@ -2,5 +2,6 @@ package com.example.Ecommerce.Enums;
 
 public enum PaymentMethod {
     CARD,
-    UPI
+    UPI,
+    COD
 }
