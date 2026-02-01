@@ -29,6 +29,7 @@ public class Order {
     //options: Lazy or Eager. Use lazy when the user is not immediately required else use Eager
     //default will also be eager only here for many to one relationship since only one record needs to be fetched
     @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
     private User user;
     @OneToOne
     private Payments payments;
