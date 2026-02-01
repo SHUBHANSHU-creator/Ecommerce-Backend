@@ -23,4 +23,13 @@ class EcommerceApplicationTests {
 
     }
 
+    @Test
+    void addNewProduct() {
+        Product product = new Product();
+        product.setProductName("Iphone");
+        product.setProductDescription("Iphone");
+        Integer Quantity = new Integer(1);
+        inventoryService.addNewProduct(product, Quantity);
+    }
+
 }

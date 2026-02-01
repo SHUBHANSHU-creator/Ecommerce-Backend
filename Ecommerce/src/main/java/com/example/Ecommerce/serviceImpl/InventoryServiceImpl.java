@@ -3,6 +3,7 @@ package com.example.Ecommerce.serviceImpl;
 import com.example.Ecommerce.Entity.Inventory;
 import com.example.Ecommerce.Entity.Product;
 import com.example.Ecommerce.Repository.InventoryRepository;
+import com.example.Ecommerce.Repository.ProductRepository;
 import com.example.Ecommerce.exception.InsufficientStockException;
 import com.example.Ecommerce.exception.InventoryNotFoundException;
 import com.example.Ecommerce.exception.InvalidInventoryOperationException;
@@ -20,6 +21,9 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Autowired
     private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Override
     public ApiResponse<Boolean> checkAvailability(Long productId, Integer quantity) {
@@ -73,8 +77,12 @@ public class InventoryServiceImpl implements InventoryService {
         if (product == null || quantity == null || quantity < 0) {
             throw new InvalidInventoryOperationException("Product and non-negative quantity must be provided");
         }
-        Inventory inv = new Inventory(product, quantity);
+
+        Product savedProduct = productRepository.save(product);   // ✅ persist first
+
+        Inventory inv = new Inventory(savedProduct, quantity);
         Inventory savedInventory = inventoryRepository.save(inv);
+
         return new ApiResponse<>(HttpStatus.CREATED.value(), "Product added to inventory", savedInventory);
     }
 }
