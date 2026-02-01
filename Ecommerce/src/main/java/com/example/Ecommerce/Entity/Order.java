@@ -22,6 +22,7 @@ public class Order {
     private String orderName;
     private LocalDateTime orderDate;
     private Double totalAmount;
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
     //options: Lazy or Eager. Use lazy when the user is not immediately required else use Eager
@@ -33,14 +34,13 @@ public class Order {
     // cascade = ALL: If you save the Order, save all the items automatically.
     // orphanRemoval = true: If you remove an item from the list, delete it from the DB.
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> orderItems;
+    private List<OrderItem> orderItems = new ArrayList<>();
 
 
-    Order(String OrderName,Double totalAmount,User user) {
+    public Order(String OrderName,Double totalAmount,User user) {
         this.orderName = OrderName;
         this.orderDate = LocalDateTime.now();
         this.totalAmount = totalAmount;
-        this.orderItems = new ArrayList<>();
         this.user = user;
     }
 

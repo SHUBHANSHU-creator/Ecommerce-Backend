@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +23,11 @@ public class Inventory {
     private Integer quantity;
     private LocalDateTime creationDate;
 
+    public Inventory(Product product, Integer quantity) {
+        this.product = product;
+        this.quantity = quantity;
+    }
+
     //used versioning for overselling
     //if two users try to grab a prod, one will succeed, second will fail since version increases
     //and his query fails i.e update .... quantity - 1 where version = x (x becomes x+1)
@@ -35,4 +39,10 @@ public class Inventory {
     //if 1000 users tried to buy iphone at a time then they both have to wait until everyone else are done.
     @Version
     private Integer version;
+
+    @PrePersist
+    protected void onCreate() {
+        this.creationDate = LocalDateTime.now();
+    }
+
 }
