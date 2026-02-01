@@ -3,6 +3,7 @@ package com.example.Ecommerce.serviceImpl;
 import com.example.Ecommerce.Entity.Order;
 import com.example.Ecommerce.Enums.PaymentMethod;
 import com.example.Ecommerce.exception.InvalidOrderException;
+import com.example.Ecommerce.response.ApiResponse;
 import com.example.Ecommerce.service.PaymentService;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +34,7 @@ public class PaymentServiceFactory {
         return paymentService;
     }
 
-    public void processPayment(PaymentMethod paymentMethod, Order order) {
-        resolve(paymentMethod).pay(order);
+    public ApiResponse<String> processPayment(PaymentMethod paymentMethod, Order order) {
+        return resolve(paymentMethod).pay(order);
     }
 }

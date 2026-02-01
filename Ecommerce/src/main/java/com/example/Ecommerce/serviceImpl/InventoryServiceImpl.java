@@ -6,10 +6,12 @@ import com.example.Ecommerce.Repository.InventoryRepository;
 import com.example.Ecommerce.exception.InsufficientStockException;
 import com.example.Ecommerce.exception.InventoryNotFoundException;
 import com.example.Ecommerce.exception.InvalidInventoryOperationException;
+import com.example.Ecommerce.response.ApiResponse;
 import com.example.Ecommerce.service.InventoryService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,19 +22,20 @@ public class InventoryServiceImpl implements InventoryService {
     private InventoryRepository inventoryRepository;
 
     @Override
-    public boolean checkAvailability(Long productId, Integer quantity) {
+    public ApiResponse<Boolean> checkAvailability(Long productId, Integer quantity) {
         if (productId == null || quantity == null || quantity <= 0) {
             throw new InvalidInventoryOperationException("Product id and quantity must be provided for availability checks");
         }
         Inventory inv =  inventoryRepository.findByProductId(productId);
         log.info("Check availability of inventory {}",inv);
-        return inv!=null && inv.getQuantity() >= quantity;
+        boolean available = inv != null && inv.getQuantity() >= quantity;
+        return new ApiResponse<>(HttpStatus.OK.value(), "Inventory availability checked", available);
     }
 
     //used transactional for atomicity and added versioning to add a optimistic lock
     @Transactional
     @Override
-    public void reduceStock(Long productId, Integer quantity) {
+    public ApiResponse<Inventory> reduceStock(Long productId, Integer quantity) {
         if (productId == null || quantity == null || quantity <= 0) {
             throw new InvalidInventoryOperationException("Product id and quantity must be provided to reduce stock");
         }
@@ -42,7 +45,8 @@ public class InventoryServiceImpl implements InventoryService {
         }
         if (inventory.getQuantity() >= quantity) {
             inventory.setQuantity(inventory.getQuantity() - quantity);
-            inventoryRepository.save(inventory);
+            Inventory savedInventory = inventoryRepository.save(inventory);
+            return new ApiResponse<>(HttpStatus.OK.value(), "Stock reduced successfully", savedInventory);
         }else{
             throw new InsufficientStockException(productId, quantity, inventory.getQuantity());
         }
@@ -50,7 +54,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public void restockProduct(Long productId, Integer quantity) {
+    public ApiResponse<Inventory> restockProduct(Long productId, Integer quantity) {
         if (productId == null || quantity == null || quantity <= 0) {
             throw new InvalidInventoryOperationException("Product id and quantity must be provided to restock");
         }
@@ -59,16 +63,18 @@ public class InventoryServiceImpl implements InventoryService {
             throw new InventoryNotFoundException(productId);
         }
         inventory.setQuantity(inventory.getQuantity() + quantity);
-        inventoryRepository.save(inventory);
+        Inventory savedInventory = inventoryRepository.save(inventory);
+        return new ApiResponse<>(HttpStatus.OK.value(), "Stock restocked successfully", savedInventory);
 
     }
 
     @Override
-    public Inventory addNewProduct(Product product, Integer quantity) {
+    public ApiResponse<Inventory> addNewProduct(Product product, Integer quantity) {
         if (product == null || quantity == null || quantity < 0) {
             throw new InvalidInventoryOperationException("Product and non-negative quantity must be provided");
         }
         Inventory inv = new Inventory(product, quantity);
-        return inventoryRepository.save(inv);
+        Inventory savedInventory = inventoryRepository.save(inv);
+        return new ApiResponse<>(HttpStatus.CREATED.value(), "Product added to inventory", savedInventory);
     }
 }
