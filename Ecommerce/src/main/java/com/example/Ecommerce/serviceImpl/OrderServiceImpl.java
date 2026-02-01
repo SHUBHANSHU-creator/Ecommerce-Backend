@@ -9,10 +9,12 @@ import com.example.Ecommerce.Enums.PaymentMethod;
 import com.example.Ecommerce.Repository.OrderRepository;
 import com.example.Ecommerce.exception.InvalidOrderException;
 import com.example.Ecommerce.exception.OrderNotFoundException;
+import com.example.Ecommerce.response.ApiResponse;
 import com.example.Ecommerce.service.InventoryService;
 import com.example.Ecommerce.service.OrderService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,20 +32,22 @@ public class OrderServiceImpl implements OrderService {
     private PaymentServiceFactory paymentServiceFactory;
 
     @Override
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public ApiResponse<List<Order>> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+        return new ApiResponse<>(HttpStatus.OK.value(), "Orders retrieved successfully", orders);
     }
 
 
     @Override
-    public Order getOrderById(Long orderId) {
-        return orderRepository.findById(orderId)
+    public ApiResponse<Order> getOrderById(Long orderId) {
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
+        return new ApiResponse<>(HttpStatus.OK.value(), "Order retrieved successfully", order);
     }
 
     @Override
     @Transactional
-    public String placeOrder(Order order) {
+    public ApiResponse<Order> placeOrder(Order order) {
         if (order == null) {
             throw new InvalidOrderException("Order payload must be provided");
         }
@@ -64,7 +68,8 @@ public class OrderServiceImpl implements OrderService {
             if (orderItem.getQuantity() == null || orderItem.getQuantity() <= 0) {
                 throw new InvalidOrderException("Order item must contain at least one quantity");
             }
-            if (!inventoryService.checkAvailability(product.getId(), orderItem.getQuantity())) {
+            ApiResponse<Boolean> availabilityResponse = inventoryService.checkAvailability(product.getId(), orderItem.getQuantity());
+            if (!Boolean.TRUE.equals(availabilityResponse.getData())) {
                 throw new InvalidOrderException("Insufficient stock for productId=" + product.getId());
             }
             inventoryService.reduceStock(product.getId(), orderItem.getQuantity());
@@ -81,31 +86,32 @@ public class OrderServiceImpl implements OrderService {
         if(payments != null && payments.getPaymentMethod() != null && payments.getPaymentMethod() != PaymentMethod.COD) {
             paymentServiceFactory.processPayment(payments.getPaymentMethod(),order);
         }
-        orderRepository.save(order);
-        return"Order placed successfully";
+        Order savedOrder = orderRepository.save(order);
+        return new ApiResponse<>(HttpStatus.CREATED.value(), "Order placed successfully", savedOrder);
     }
 
 
     @Override
-    public String cancelOrder(Long id) {
+    public ApiResponse<Order> cancelOrder(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
         if (order.getOrderStatus() != OrderStatus.PLACED) {
-            return "Order cannot be cancelled";
+            return new ApiResponse<>(HttpStatus.CONFLICT.value(), "Order cannot be cancelled", order);
         }
         order.setOrderStatus(OrderStatus.CANCELED);
-        orderRepository.save(order);
-        return "Order cancelled and stock restored";
+        Order savedOrder = orderRepository.save(order);
+        return new ApiResponse<>(HttpStatus.OK.value(), "Order cancelled and stock restored", savedOrder);
     }
 
     @Override
-    public Order updateOrderStatus(Long orderId, OrderStatus status) {
+    public ApiResponse<Order> updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
         if (status == null) {
             throw new InvalidOrderException("Order status must be provided");
         }
         order.setOrderStatus(status);
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return new ApiResponse<>(HttpStatus.OK.value(), "Order status updated successfully", savedOrder);
     }
 }
