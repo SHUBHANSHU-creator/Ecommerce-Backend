@@ -36,11 +36,37 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public String placeOrder(Order order) {
         List<OrderItem> orderItems = order.getOrderItems();
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new IllegalArgumentException("Order must contain at least one item");
+        }
+        //check availability
+        //reduce stock
+        //calculate total if not done yet
+
+        double totalAmount = 0;
         for (OrderItem orderItem : orderItems) {
             Product product = orderItem.getProduct();
+            if (product == null) {
+                throw new IllegalArgumentException("Order item must reference a product");
+            }
+            if (orderItem.getQuantity() == null || orderItem.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Order item must contain at least one quantity");
+            }
+            if (!inventoryService.checkAvailability(product.getProductId(), orderItem.getQuantity())) {
+                throw new IllegalArgumentException("Order item quantity is not enough");
+            }
             inventoryService.reduceStock(product.getProductId(), orderItem.getQuantity());
+            orderItem.setOrder(order);
+            totalAmount += orderItem.getPriceAtPurchase() * orderItem.getQuantity();
         }
-        return "";
+
+        if(order.getTotalAmount() == null){
+            order.setTotalAmount(totalAmount);
+        }
+        //set order status to placed
+        order.setOrderStatus(OrderStatus.PLACED);
+        orderRepository.save(order);
+        return"Order placed successfully";
     }
 
 
