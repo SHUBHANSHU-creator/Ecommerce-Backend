@@ -5,8 +5,11 @@ import com.example.Ecommerce.Entity.OrderItem;
 import com.example.Ecommerce.Entity.Product;
 import com.example.Ecommerce.Enums.OrderStatus;
 import com.example.Ecommerce.Repository.OrderRepository;
+import com.example.Ecommerce.exception.InvalidOrderException;
+import com.example.Ecommerce.exception.OrderNotFoundException;
 import com.example.Ecommerce.service.InventoryService;
 import com.example.Ecommerce.service.OrderService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,14 +33,18 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order Not Found"));
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
     @Override
+    @Transactional
     public String placeOrder(Order order) {
+        if (order == null) {
+            throw new InvalidOrderException("Order payload must be provided");
+        }
         List<OrderItem> orderItems = order.getOrderItems();
         if (orderItems == null || orderItems.isEmpty()) {
-            throw new IllegalArgumentException("Order must contain at least one item");
+            throw new InvalidOrderException("Order must contain at least one item");
         }
         //check availability
         //reduce stock
@@ -47,13 +54,13 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItem orderItem : orderItems) {
             Product product = orderItem.getProduct();
             if (product == null) {
-                throw new IllegalArgumentException("Order item must reference a product");
+                throw new InvalidOrderException("Order item must reference a product");
             }
             if (orderItem.getQuantity() == null || orderItem.getQuantity() <= 0) {
-                throw new IllegalArgumentException("Order item must contain at least one quantity");
+                throw new InvalidOrderException("Order item must contain at least one quantity");
             }
             if (!inventoryService.checkAvailability(product.getProductId(), orderItem.getQuantity())) {
-                throw new IllegalArgumentException("Order item quantity is not enough");
+                throw new InvalidOrderException("Insufficient stock for productId=" + product.getProductId());
             }
             inventoryService.reduceStock(product.getProductId(), orderItem.getQuantity());
             orderItem.setOrder(order);
@@ -73,7 +80,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public String cancelOrder(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order Not Found"));
+                .orElseThrow(() -> new OrderNotFoundException(id));
         if (order.getOrderStatus() != OrderStatus.PLACED) {
             return "Order cannot be cancelled";
         }
@@ -85,7 +92,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order Not Found"));
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        if (status == null) {
+            throw new InvalidOrderException("Order status must be provided");
+        }
         order.setOrderStatus(status);
         return orderRepository.save(order);
     }
