@@ -24,11 +24,14 @@ public class Order {
     private Double totalAmount;
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus = OrderStatus.PENDING;
+    private String shippingAddress;
 
     //options: Lazy or Eager. Use lazy when the user is not immediately required else use Eager
     //default will also be eager only here for many to one relationship since only one record needs to be fetched
     @ManyToOne(fetch = FetchType.EAGER)
     private User user;
+    @OneToMany(fetch = FetchType.LAZY)
+    private Payments payments;
 
 
     // cascade = ALL: If you save the Order, save all the items automatically.
@@ -37,10 +40,11 @@ public class Order {
     private List<OrderItem> orderItems = new ArrayList<>();
 
 
-    public Order(String OrderName,Double totalAmount,User user) {
+    public Order(String OrderName,Double totalAmount,User user, String shippingAddress) {
         this.orderName = OrderName;
         this.orderDate = LocalDateTime.now();
         this.totalAmount = totalAmount;
+        this.shippingAddress = shippingAddress;
         this.user = user;
     }
 
